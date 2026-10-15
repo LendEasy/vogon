@@ -1,0 +1,26 @@
+# Ruff — the voice gateway's linter (2026-10-05), the data plane's rule set.
+# Run: `ruff check .` (add `--statistics` for counts, `--fix` for the safe autofixes).
+target-version = "py310"
+line-length = 120
+# experiments, not shipped code
+extend-exclude = ["prototypes"]
+
+[lint]
+select = [
+    "F",        # pyflakes: undefined names (F821), unused imports (F401), redefinitions (F811)
+    "E", "W",   # pycodestyle errors and warnings
+    "I",        # import sorting (isort)
+    "B",        # flake8-bugbear: likely bugs (mutable defaults, loop variables, ...)
+    "UP",       # pyupgrade: modern syntax for the target version
+    "PLC0415",  # imports at the top of the file; a deliberate inline import says why in a noqa
+]
+ignore = [
+    "E501",     # line length — tighten later, not by one sweeping reformat
+]
+# PLC0415 is a preview rule in ruff 0.11; enable it and nothing else from preview
+preview = true
+explicit-preview-rules = true
+
+[lint.isort]
+# the gateway's own package, and the Turn API package both sides share
+known-first-party = ["vogon", "vogon_contract"]

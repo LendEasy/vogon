@@ -1,0 +1,19 @@
+# The build context for the Dockerfile is this directory. Everything a running
+# gateway writes, every experiment, every secret and the tests stay out of it.
+prototypes/
+storage/
+data/
+tests/
+.venv/
+venv/
+.env
+.env.*
+.git/
+.github/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
+**/dist/
+**/build/

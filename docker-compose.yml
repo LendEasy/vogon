@@ -1,0 +1,48 @@
+# vogon with the reference turn service, for GETTING_STARTED.md ("The Docker track").
+#
+#   docker compose up --build --wait           # builds vogon:local once, starts both
+#   python examples/text_call.py --turn http://echo:9000/turn/v1 --say "hello there" --say goodbye
+#   docker compose down -v
+#
+# Both containers run the same image: `vogon` serves the gateway on :8002, `echo` runs
+# examples/echo_turn_service.py (copied into the image by the Dockerfile) on the compose
+# network, where the gateway reaches it as http://echo:9000/turn/v1. The build context is
+# this directory (.dockerignore keeps it small); the Turn API package is installed from a
+# wheel in wheels/ when one is there, else from the Dockerfile's CONTRACT_SPEC.
+services:
+  echo:
+    build: &vogon-build
+      context: .
+      dockerfile: Dockerfile
+    image: vogon:local
+    command: ["python", "/opt/vogon/examples/echo_turn_service.py"]
+    environment:
+      ECHO_HOST: 0.0.0.0
+      ECHO_PORT: "9000"
+    # The image's own HEALTHCHECK probes the gateway's :8002; this container serves :9000.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:9000/health').status == 200 else 1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+
+  vogon:
+    build: *vogon-build
+    image: vogon:local
+    depends_on:
+      - echo
+    ports:
+      - "${GATEWAY_PORT:-8002}:8002"
+    # Provider keys, when you have them; the text call needs none.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      GATEWAY_SESSION_STORE: memory
+      GATEWAY_CAPABILITY_POLICY: ${GATEWAY_CAPABILITY_POLICY:-refuse}
+      REDIS_ENABLED: "false"
+    volumes:
+      - vogon-data:/data
+
+volumes:
+  vogon-data:

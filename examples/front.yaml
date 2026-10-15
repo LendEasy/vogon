@@ -1,0 +1,32 @@
+# A neutral front artifact — the template for FRONT_CONFIG_PATH.
+#
+# The gateway's filler hold draws its words from a file like this one while
+# your turn service composes a reply (docs/voice-gateway-front-model.md,
+# docs/FRONT_COMPLEMENT_DESIGN.md). The gateway ships no words of its own:
+# with FRONT_CONFIG_PATH unset the model tier is off and the hold uses the
+# FillerPolicy pools your service returns in CallConfig.
+#
+# Every pool is linted at load against the same guards the model's lines get
+# (vogon/gateway/transport/front_guard.py): a line must be safe at ANY moment
+# of the call, because the rules that choose it never read what the caller
+# said. A pool with "Okay", "Got it", "Sure", a number or a word from
+# must_not_say refuses to load.
+#
+# This template carries only the beat pools, so a gateway pointed at it says
+# at most a four-word acknowledgement while it waits. To let the model pick a
+# fuller line, add the tiers (lookup, courtesy, repeat), move_question,
+# move_criteria, move_riders and prompt that your domain's survey supports;
+# the design doc explains how those were derived.
+
+must_not_say: []
+
+beats:
+  # the hold is still open at FRONT_BEAT_AFTER_MS and the model had nothing
+  hold:
+    - "One moment."
+    - "Bear with me."
+    - "Just a moment."
+  # the answer still not back FRONT_WAIT_AGAIN_AFTER_MS after a front line
+  wait:
+    - "Still with you."
+    - "Just a moment longer."

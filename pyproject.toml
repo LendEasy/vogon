@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "le-vogon"
+version = "0.1.0"
+description = "A voice gateway for AI phone and browser calls: audio in, typed turns out, over the Turn API."
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = [
+    "le-vogon-contract>=0.1.0,<1",
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "websockets==14.1",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.0",
+    "python-dotenv==1.0.1",
+    "python-multipart>=0.0.9",
+    "httpx==0.28.1",
+    "deepgram-sdk==6.0.1",
+    "twilio>=9.0.0",
+    "webrtcvad>=2.0.10",
+    "numpy",
+    "aiofiles==24.1.0",
+    "boto3>=1.34",
+    "redis[hiredis]>=5.0",
+    "cerebras-cloud-sdk==1.21.0",
+    'audioop-lts; python_version >= "3.13"',
+    "openai[realtime]>=3.8,<4",
+    "Brotli>=1.2",
+    "zstandard>=0.25",
+]
+
+[project.optional-dependencies]
+# The SpeexDSP echo canceller is not an extra: its binding does not build under
+# PEP 517, so deploy/build_speexdsp.sh installs it in two steps (DEPLOY.md).
+# PyYAML is read only when FRONT_CONFIG_PATH names a front-model artifact.
+front = ["PyYAML>=6"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.11", "PyYAML>=6"]
+
+[project.scripts]
+vogon = "vogon.gateway_service.main:cli"
+
+[project.urls]
+Homepage = "https://github.com/LendEasy/vogon"
+
+[tool.setuptools.packages.find]
+include = ["vogon*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

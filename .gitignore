@@ -1,0 +1,47 @@
+# Environment / secrets — only env.example is tracked
+.env
+.env.*
+*.env
+!env.example
+!deploy/*.env.template
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Runtime data written by a running gateway (recordings, call logs,
+# transcripts, metrics, the local session DB)
+storage/
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Logs and audio dropped while debugging a call
+*.log
+*.wav
+
+# Experiments: model weights, runs and scratch code that never ship with the gateway
+prototypes/
+
+# A locally built le-vogon-contract wheel for the Docker build (see the Dockerfile)
+wheels/
+
+# OS / editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/

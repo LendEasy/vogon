@@ -1,0 +1,23 @@
+# vogon — systemd unit template. Adjust the user, paths and port; the env file
+# holds the provider keys (DEEPGRAM_API_KEY, OPEN_ROUTER_API_KEY, TWILIO_*) and
+# the GATEWAY_* deployment settings (see CONFIGURATION.md).
+[Unit]
+Description=vogon voice gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=vogon
+WorkingDirectory=/opt/vogon
+EnvironmentFile=/etc/vogon/vogon.env
+ExecStart=/opt/vogon/.venv/bin/python -m uvicorn vogon.gateway_service.main:app --host 127.0.0.1 --port 8002
+Restart=on-failure
+RestartSec=2
+# The gateway writes recordings and metrics under STORAGE_BASE_PATH only.
+ProtectSystem=strict
+ReadWritePaths=/var/lib/vogon
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,30 @@
+# Voice Gateway — Python packages (the gateway half only; DEPENDENCIES.md §3).
+# The shared data-plane requirements.txt is a SUPERSET (adds torch etc. for
+# the reasoning half) — a gateway-only host installs just this file.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+websockets==14.1
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+python-multipart>=0.0.9
+httpx==0.28.1
+deepgram-sdk==6.0.1
+twilio>=9.0.0
+speexdsp @ git+https://github.com/xiongyihui/speexdsp-python.git
+webrtcvad>=2.0.10
+numpy
+aiofiles==24.1.0
+boto3>=1.34
+redis[hiredis]>=5.0
+cerebras-cloud-sdk==1.21.0
+audioop-lts; python_version >= "3.13"
+# OpenAI SDK: the gateway's GPT-Live path (vogon/gateway/pipeline/live_session.py)
+# needs the Live API, which exists only from openai 3.8 — a 2.x SDK fails
+# every live call with "'AsyncOpenAI' object has no attribute 'live'"
+# (production, 2026-09-12). 3.x vendors httpx2, whose content decoders need
+# Brotli >= 1.2 and zstandard >= 0.25; older ones fail EVERY HTTP call with
+# APIConnectionError ("process() takes no keyword arguments").
+openai[realtime]>=3.8,<4
+Brotli>=1.2
+zstandard>=0.25
