@@ -38,7 +38,9 @@ dependencies = [
 # PEP 517, so deploy/build_speexdsp.sh installs it in two steps (DEPLOY.md).
 # PyYAML is read only when FRONT_CONFIG_PATH names a front-model artifact.
 front = ["PyYAML>=6"]
-dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.11", "PyYAML>=6"]
+# fakeredis[lua] stands in for Redis in the transfer-store test; the lua extra
+# (lupa) runs the store's compare-and-set scripts.
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.11", "PyYAML>=6", "fakeredis[lua]>=2.23"]
 
 [project.scripts]
 vogon = "vogon.gateway_service.main:cli"
