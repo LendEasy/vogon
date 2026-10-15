@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -145,7 +145,7 @@ def heuristic_verdict(
     return "ambiguous"
 
 
-def resolve_final(heuristic: str, llm_verdict: Optional[str]) -> tuple[str, str]:
+def resolve_final(heuristic: str, llm_verdict: str | None) -> tuple[str, str]:
     """Compose the final (verdict, source) after the window resolves.
 
     - A decisive heuristic wins (it already short-circuited the window).
@@ -321,7 +321,7 @@ def classify_barge(
     heard_text: str,
     unheard_text: str,
     last_agent_line: str,
-) -> Optional[str]:
+) -> str | None:
     """One Cerebras verdict call. SYNCHRONOUS — the caller MUST run this in an
     executor under an explicit timeout (semantic_barge_llm_timeout_ms); this
     call gates an audio cut and is never allowed to block unboundedly.

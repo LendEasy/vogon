@@ -12,7 +12,7 @@ docs/speech-delivery-completion.md.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 # Words → milliseconds, the FALLBACK when nothing exact is available.
 #
@@ -38,7 +38,7 @@ def estimate_total_ms(text: str) -> float:
     return max(words, 1) * MS_PER_WORD_ESTIMATE
 
 
-def estimate_heard_text(text: str, audio_ms: Optional[float], est_total_ms: float) -> str:
+def estimate_heard_text(text: str, audio_ms: float | None, est_total_ms: float) -> str:
     """Best-effort prefix of *text* the caller heard, by audio proportion.
 
     Word-boundary aligned. An ESTIMATE — audio chunks do not map exactly to
@@ -65,7 +65,7 @@ class DeliveryReport:
     audio_id: str
     status: Literal["complete", "truncated", "failed"]
     chunks_sent: int = 0
-    audio_ms: Optional[float] = None   # what was streamed; None if unknown (widget)
+    audio_ms: float | None = None   # what was streamed; None if unknown (widget)
     est_total_ms: float = 0.0          # estimate from text length
     mark_pending: bool = False         # Twilio: playback mark not yet echoed
     # Bounded playout buffer (Phase 3, tts_pacing_mode="sentence"): exact
@@ -77,11 +77,11 @@ class DeliveryReport:
     heard_text: str = ""
     # Metrics inversion (voice-gateway-phase0 §7): the transport reports raw
     # timings; the handler owns all metric/analytics emission.
-    first_chunk_ms: Optional[float] = None  # TTS first-chunk latency (client-measured)
-    first_chunk_t: Optional[float] = None   # monotonic when first audio headed to the caller
+    first_chunk_ms: float | None = None  # TTS first-chunk latency (client-measured)
+    first_chunk_t: float | None = None   # monotonic when first audio headed to the caller
 
     @property
-    def heard_fraction(self) -> Optional[float]:
+    def heard_fraction(self) -> float | None:
         """audio_ms / est_total_ms, clamped to [0, 1]. None if unknowable."""
         if self.audio_ms is None or self.est_total_ms <= 0:
             return None

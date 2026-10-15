@@ -11,7 +11,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Optional
 
 from vogon.gateway_service.escalation import report
 from vogon.gateway_service.escalation.state import (
@@ -134,7 +133,7 @@ async def caller_status_body(call_sid: str, call_status: str,
     await orchestrator_factory().handle_caller_gone(call_sid)
 
 
-async def audio_body(token: str) -> Optional[bytes]:
+async def audio_body(token: str) -> bytes | None:
     """A line rendered in the persona's voice, by its unguessable token —
     None once the transfer (and with it the audio) is gone."""
     return await get_audio(token)

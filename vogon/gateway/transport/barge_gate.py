@@ -41,7 +41,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class GateState(Enum):
@@ -87,7 +86,7 @@ class BargeGate:
     def __init__(
         self,
         cfg: BargeGateConfig,
-        confirm_frame: Optional[Callable[[bytes], bool]] = None,
+        confirm_frame: Callable[[bytes], bool] | None = None,
     ) -> None:
         self.cfg = cfg
         self._confirm_frame = confirm_frame

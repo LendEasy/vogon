@@ -14,7 +14,6 @@ import logging
 import time
 import uuid
 from pathlib import Path
-from typing import Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request, WebSocket
@@ -54,7 +53,7 @@ router = APIRouter(tags=["gateway"])
 
 # ── Injectable process dependencies (same pattern as http_service) ──────────
 
-_store: Optional[GatewaySessionStore] = None
+_store: GatewaySessionStore | None = None
 _instance_id = f"gw-{uuid.uuid4().hex[:8]}"
 
 
@@ -136,7 +135,7 @@ class CreateCallBody(BaseModel):
     app: AppBinding
     app_payload: dict = {}
     route: str = ""
-    twilio: Optional[TwilioDial] = None
+    twilio: TwilioDial | None = None
     # Optional CLIENT-SUPPLIED call id (item 5 remainder): the application
     # may bring its own id so its business record (CallRecord) and the
     # gateway's session record share ONE key. Must be unique; a duplicate
@@ -412,7 +411,7 @@ async def artifact_timeline(tenant: str, call_id: str, request: Request,
 
 ESCALATION_PREFIX = "/v1/escalation"
 
-_esc_orchestrator: Optional[TransferOrchestrator] = None
+_esc_orchestrator: TransferOrchestrator | None = None
 
 
 def escalation_orchestrator() -> TransferOrchestrator:

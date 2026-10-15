@@ -16,7 +16,7 @@ import json
 import logging
 import time
 from dataclasses import asdict, dataclass, field
-from typing import Optional, Protocol
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class CallSessionRecord:
     route: str = ""                        # opaque sub-scope label
     state: str = "created"
     provider_call_id: str = ""             # Twilio CallSid, bound at dial
-    call_config: Optional[dict] = None     # resolved snapshot (config §2.5)
+    call_config: dict | None = None     # resolved snapshot (config §2.5)
     gateway_instance: str = ""             # which replica holds the socket
     created_at_utc: float = 0.0
     connected_at_utc: float = 0.0
@@ -72,9 +72,9 @@ class GatewaySessionStore(Protocol):
     tenant — the caller verifies scope."""
 
     async def create(self, rec: CallSessionRecord) -> None: ...
-    async def get(self, tenant: str, call_id: str) -> Optional[CallSessionRecord]: ...
-    async def get_by_token(self, token: str) -> Optional[CallSessionRecord]: ...
-    async def get_by_provider_id(self, provider_call_id: str) -> Optional[CallSessionRecord]: ...
+    async def get(self, tenant: str, call_id: str) -> CallSessionRecord | None: ...
+    async def get_by_token(self, token: str) -> CallSessionRecord | None: ...
+    async def get_by_provider_id(self, provider_call_id: str) -> CallSessionRecord | None: ...
     async def bind_provider_id(self, tenant: str, call_id: str, provider_call_id: str) -> None: ...
     async def transition(self, tenant: str, call_id: str, state: str) -> None: ...
     async def save_call_config(self, tenant: str, call_id: str, snapshot: dict) -> None: ...
@@ -95,14 +95,14 @@ class MemorySessionStore:
         self._by_key[(rec.tenant, rec.call_id)] = rec
         self._token_idx[rec.session_token] = (rec.tenant, rec.call_id)
 
-    async def get(self, tenant: str, call_id: str) -> Optional[CallSessionRecord]:
+    async def get(self, tenant: str, call_id: str) -> CallSessionRecord | None:
         return self._by_key.get((tenant, call_id))
 
-    async def get_by_token(self, token: str) -> Optional[CallSessionRecord]:
+    async def get_by_token(self, token: str) -> CallSessionRecord | None:
         key = self._token_idx.get(token)
         return self._by_key.get(key) if key else None
 
-    async def get_by_provider_id(self, provider_call_id: str) -> Optional[CallSessionRecord]:
+    async def get_by_provider_id(self, provider_call_id: str) -> CallSessionRecord | None:
         key = self._sid_idx.get(provider_call_id)
         return self._by_key.get(key) if key else None
 
@@ -164,7 +164,7 @@ class RedisSessionStore:
         await self._r.set(f"gw:idx:token:{rec.session_token}",
                           f"{rec.tenant}|{rec.call_id}", ex=_LIVE_TTL_SEC)
 
-    async def get(self, tenant: str, call_id: str) -> Optional[CallSessionRecord]:
+    async def get(self, tenant: str, call_id: str) -> CallSessionRecord | None:
         raw = await self._r.get(self._key(tenant, call_id))
         if raw is None:
             return None
@@ -172,7 +172,7 @@ class RedisSessionStore:
             raw = raw.decode("utf-8")
         return CallSessionRecord.from_json(raw)
 
-    async def _get_by_index(self, idx_key: str) -> Optional[CallSessionRecord]:
+    async def _get_by_index(self, idx_key: str) -> CallSessionRecord | None:
         ref = await self._r.get(idx_key)
         if ref is None:
             return None
@@ -181,10 +181,10 @@ class RedisSessionStore:
         tenant, _, call_id = ref.partition("|")
         return await self.get(tenant, call_id)
 
-    async def get_by_token(self, token: str) -> Optional[CallSessionRecord]:
+    async def get_by_token(self, token: str) -> CallSessionRecord | None:
         return await self._get_by_index(f"gw:idx:token:{token}")
 
-    async def get_by_provider_id(self, provider_call_id: str) -> Optional[CallSessionRecord]:
+    async def get_by_provider_id(self, provider_call_id: str) -> CallSessionRecord | None:
         return await self._get_by_index(f"gw:idx:sid:{provider_call_id}")
 
     async def bind_provider_id(self, tenant: str, call_id: str,

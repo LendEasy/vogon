@@ -27,7 +27,7 @@ import asyncio
 import dataclasses as _dc
 import logging
 import time
-from typing import Optional, Protocol
+from typing import Protocol
 
 import httpx
 
@@ -92,8 +92,8 @@ class HttpTurnClient:
     finalizes any call whose end_call never landed."""
 
     def __init__(self, base_url: str, *, api_key: str = "",
-                 timeout_sec: Optional[float] = None, transport=None,
-                 epoch: Optional[float] = None):
+                 timeout_sec: float | None = None, transport=None,
+                 epoch: float | None = None):
         # base_url is the FULL Turn API root (…/turn/v1) per the plan §2.2:
         # the client appends only the operation name. (The live smoke caught
         # the double-prefix bug the ASGI tests could not: their base had no

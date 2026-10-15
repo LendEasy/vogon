@@ -44,7 +44,6 @@ import time
 import wave
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Optional
 
 from fastapi import WebSocket
 
@@ -142,7 +141,7 @@ class TwilioTransport(BaseTransport):
         call_id: str = "",
         call_config=None,   # gateway CallConfig — the ONLY config input
         start_event: dict | None = None,
-        qsize_fn: Optional[Callable[[], int]] = None,
+        qsize_fn: Callable[[], int] | None = None,
         recorder: AudioRecorder | None = None,
         audio_event_sink=None,
         line_instrument=None,   # ask(state) -> P(recording); installed by the driver

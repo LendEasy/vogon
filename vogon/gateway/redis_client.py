@@ -10,7 +10,6 @@ topology handshake.  Subsequent calls return the cached client.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 import redis.asyncio as aioredis
 from redis.asyncio.cluster import RedisCluster
@@ -18,9 +17,6 @@ from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 
 from vogon.gateway import settings as _gw_settings
-
-if TYPE_CHECKING:
-    from redis.asyncio.cluster import RedisCluster
 
 logger = logging.getLogger(__name__)
 

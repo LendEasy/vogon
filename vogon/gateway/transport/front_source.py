@@ -22,7 +22,6 @@ import json
 import logging
 import random
 import time
-from typing import Optional
 
 from cerebras.cloud.sdk import AsyncCerebras
 
@@ -143,7 +142,7 @@ class FrontModelSource:
         self._forbidden_names = tuple(n for n in (borrower_first_name,) if n)
         self._history: list[tuple[str, str]] = []      # ("Borrower"|"Agent"|"Agent (your waiting line)", text)
         self.lines_played: list[str] = []
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
         self._primed_text = ""
         self._result: str = ""
         self._result_for = ""

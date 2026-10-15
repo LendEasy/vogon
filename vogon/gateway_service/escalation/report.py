@@ -18,7 +18,7 @@ import asyncio
 import logging
 import time
 import uuid
-from typing import Optional, Protocol
+from typing import Protocol
 
 import httpx
 
@@ -53,7 +53,7 @@ class FactReporter(Protocol):
 class HttpFactReporter:
     """Delivers each fact on its own background task, with retries."""
 
-    def __init__(self, transport: Optional[httpx.AsyncBaseTransport] = None) -> None:
+    def __init__(self, transport: httpx.AsyncBaseTransport | None = None) -> None:
         self._tasks: set[asyncio.Task] = set()
         self._transport = transport          # tests: an ASGI/mock transport
 
@@ -107,7 +107,7 @@ def _reportable(state: TransferState) -> bool:
 
 
 async def leg(call_sid: str, state: TransferState, event: str, *,
-              attempt: Optional[int] = None, agent_call_sid: str = "",
+              attempt: int | None = None, agent_call_sid: str = "",
               detail: str = "") -> None:
     """Report one agent-leg fact (EscalationLegEvent)."""
     if not _reportable(state):

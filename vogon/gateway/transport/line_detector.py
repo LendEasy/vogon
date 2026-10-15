@@ -39,7 +39,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable
-from typing import Any, Optional
+from typing import Any
 
 from vogon_contract import LineDetection, LineVerdict, UtteranceFinal
 
@@ -150,30 +150,30 @@ class LineDetector:
         self.now = now
         self.ask = ask
         self.sleep = sleep          # a fake clock's sleep in tests
-        self.verdict: Optional[LineVerdict] = None
+        self.verdict: LineVerdict | None = None
         self.closed = False
         # the judged STT turn (bound from its first qualifying revision to
         # its end-of-turn; `episode` is the acoustic episode it started in,
         # which is what the floor controller's break-through path needs)
         self.bound = False
         self.episode: Any = None
-        self.onset_before_audio: Optional[bool] = None
+        self.onset_before_audio: bool | None = None
         self.final_seen = False
-        self.final_t: Optional[float] = None
-        self.last_text_t: Optional[float] = None     # last transcript revision of the episode
+        self.final_t: float | None = None
+        self.last_text_t: float | None = None     # last transcript revision of the episode
         # the instrument
-        self.asked_text: Optional[str] = None
-        self.pending: Optional[tuple[str, bool]] = None
-        self.last_p: Optional[float] = None
+        self.asked_text: str | None = None
+        self.pending: tuple[str, bool] | None = None
+        self.last_p: float | None = None
         self.last_latency_ms = 0.0
         self.asks = 0
         self.failures = 0
-        self.worker: Optional[asyncio.Task] = None
+        self.worker: asyncio.Task | None = None
         # the window
-        self.first_audio_t: Optional[float] = None
-        self.opening_ended_t: Optional[float] = None
-        self.retire_at: Optional[float] = None
-        self.timer: Optional[asyncio.Task] = None
+        self.first_audio_t: float | None = None
+        self.opening_ended_t: float | None = None
+        self.retire_at: float | None = None
+        self.timer: asyncio.Task | None = None
         # the hold
         self._release = asyncio.Event()
 

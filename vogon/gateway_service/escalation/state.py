@@ -21,7 +21,7 @@ import asyncio
 import base64
 import json
 from dataclasses import asdict, dataclass, field, fields
-from typing import Optional, Protocol
+from typing import Protocol
 
 # A transfer's life: hold + up to N agent legs (each ≤ the order's timeout,
 # Twilio caps a dial at 600 s) + a bridged conversation. The TTL bounds an
@@ -65,14 +65,14 @@ _FIELDS = {f.name for f in fields(TransferState)}
 
 class TransferStore(Protocol):
     async def set(self, state: TransferState) -> None: ...
-    async def get(self, call_sid: str) -> Optional[TransferState]: ...
+    async def get(self, call_sid: str) -> TransferState | None: ...
     async def update(self, call_sid: str, **changes) -> bool: ...
     async def compare_and_set(self, call_sid: str, expect: dict,
                               changes: dict) -> bool: ...
     async def incr(self, call_sid: str, field: str) -> int: ...
     async def remove(self, call_sid: str) -> None: ...
     async def put_audio(self, token: str, audio: bytes) -> None: ...
-    async def get_audio(self, token: str) -> Optional[bytes]: ...
+    async def get_audio(self, token: str) -> bytes | None: ...
     async def delete_audio(self, tokens: list[str]) -> None: ...
     async def expire_audio(self, tokens: list[str], ttl_sec: float) -> None: ...
 
@@ -88,7 +88,7 @@ class MemoryTransferStore:
     async def put_audio(self, token: str, audio: bytes) -> None:
         self._audio[token] = audio
 
-    async def get_audio(self, token: str) -> Optional[bytes]:
+    async def get_audio(self, token: str) -> bytes | None:
         return self._audio.get(token)
 
     async def delete_audio(self, tokens: list[str]) -> None:
@@ -104,7 +104,7 @@ class MemoryTransferStore:
         async with self._lock:
             self._store[state.call_sid] = TransferState(**asdict(state))
 
-    async def get(self, call_sid: str) -> Optional[TransferState]:
+    async def get(self, call_sid: str) -> TransferState | None:
         async with self._lock:
             state = self._store.get(call_sid)
             return TransferState(**asdict(state)) if state else None
@@ -182,7 +182,7 @@ class RedisTransferStore:
             pipe.expire(key, TRANSFER_TTL_SEC)
             await pipe.execute()
 
-    async def get(self, call_sid: str) -> Optional[TransferState]:
+    async def get(self, call_sid: str) -> TransferState | None:
         raw = await self._r.hgetall(self._key(call_sid))
         if not raw:
             return None
@@ -228,7 +228,7 @@ class RedisTransferStore:
                           base64.b64encode(audio).decode("ascii"),
                           ex=TRANSFER_TTL_SEC)
 
-    async def get_audio(self, token: str) -> Optional[bytes]:
+    async def get_audio(self, token: str) -> bytes | None:
         raw = await self._r.get(self._audio_key(token))
         if raw is None:
             return None
@@ -318,5 +318,5 @@ async def delete_audio(tokens: list[str]) -> None:
     await _transfer_store.delete_audio(tokens)
 
 
-async def get_audio(token: str) -> Optional[bytes]:
+async def get_audio(token: str) -> bytes | None:
     return await _transfer_store.get_audio(token)

@@ -32,7 +32,6 @@ import logging
 from dataclasses import asdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
@@ -145,7 +144,7 @@ def _profile_overrides(path: str) -> dict:
         raise
 
 
-def tenant_profile(tenant: str, cfg: Optional[GatewayConfig] = None) -> TenantProfile:
+def tenant_profile(tenant: str, cfg: GatewayConfig | None = None) -> TenantProfile:
     """Layer-2 resolution: built-in defaults overlaid by the tenant's entry
     in the profile file (unknown fields rejected by the schema — a typo'd
     profile fails loudly, never silently half-applies)."""
