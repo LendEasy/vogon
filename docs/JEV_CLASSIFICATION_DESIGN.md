@@ -11,14 +11,14 @@ the path is given next to the number.
 
 | term | meaning in this document |
 |---|---|
-| Jev | TypeSafe's `typesafe/jev-1.13`, reached through OpenRouter. It does not generate text. It takes a *state* and a set of typed *questions* and returns one typed answer per question with a probability. |
+| Jev | TypeSafe's `typesafe/jev-1.14`, reached through OpenRouter. It does not generate text. It takes a *state* and a set of typed *questions* and returns one typed answer per question with a probability. |
 | decisions endpoint | `POST https://openrouter.ai/api/alpha/decisions`. The only endpoint that serves Jev; chat completions rejects the model. |
 | state | The input Jev judges. A string, or a JSON object of related context. We send a JSON object. |
 | question | One item Jev answers. Three shapes: `noul` (yes/no, returns a probability of yes), `choice` (one key out of a `criteria` map, returns the key, a probability per key, and a confidence), `score` (a point on an ordered scale). |
 | criteria | For a choice: `{key: description}`. Jev matches the state against the descriptions and picks a key. For a noul: `{"true": ..., "false": ...}`. |
 | bail-out | A criteria key whose meaning is "nothing in this family is present". Every choice question we build has one (`none`, `stay`, `unspecified`, `not_mentioned`). Without it Jev must put every turn somewhere. |
 | turn | One borrower utterance and the agent's response to it. |
-| arbiter | `app/agents/collections_v3/arbiter.py`. Its `extract_path_facts` asks an LLM for a `PathFacts` object; its `decide()` turns `PathFacts` plus call state into a path decision in code. |
+| arbiter | `app/agents/collections/arbiter/arbiter.py`. Its `extract_path_facts` asks an LLM for a `PathFacts` object; its `decide()` turns `PathFacts` plus call state into a path decision in code. |
 | PathFacts | The arbiter's schema: ~41 booleans, ~11 enums (Python `Literal`), and value fields (amount, dates, counts, free text). |
 | categorical fields | The booleans and enums of PathFacts. Jev can answer these. It cannot write an amount or a date, so the value fields stay with the LLM. |
 | path | What the call is trying to do. One of 19 names in `arbiter.PATHS` (`negotiating`, `full_today`, `split`, `promise`, `review`, ...). `decide()` returns `stay` or `switch <path>`. |
@@ -109,7 +109,7 @@ on a real ladder turn (`benchmarks/reports/jev_ladder_replay_v2/blocks.json`):
 
 ### 4.2 Current version
 
-`app/agents/collections_v3/jev_state.py` renders the state from the
+`app/agents/collections/perception/jev_state.py` renders the state from the
 objects the text was made from: `WorkingMemory` and the node outputs.
 
 ```
@@ -167,7 +167,7 @@ definitions. Latency and cost did not change against the text version.
 
 ### 5.1 Version 1: one question per field
 
-`app/agents/collections_v3/jev_facts.py`. Every boolean as a noul, every
+`app/agents/collections/perception/jev_facts.py`. Every boolean as a noul, every
 enum as a choice: 52 questions. Instructions and criteria copied from the
 arbiter's system prompt. An import-time assertion fails if the schema gains
 a boolean or enum this module does not ask.
@@ -374,7 +374,7 @@ as a routing label on a money offer with no hardship in the words.
 
 ## 7. Decision questions
 
-`app/agents/collections_v3/jev_decisions.py` adds two choices to the same
+`app/agents/collections/perception/jev_decisions.py` adds two choices to the same
 request: `path_decision` (stay plus the 19 paths, criteria from the ontology's
 path families) and `intent` (the 28 `collections_v3` intents). Both are
 graded only. Report: `benchmarks/reports/jev_ladder_replay_v2_decisions/`.
@@ -509,10 +509,10 @@ what "correct" means:
 |---|---|
 | `app/llm/jev.py` | client, question builders, answer types |
 | `app/agents/jev_intent.py` | single-choice intent classifier, structural pruning |
-| `app/agents/collections_v3/jev_facts.py` | v1 facts, 52 questions, `merge()` |
+| `app/agents/collections/perception/jev_facts.py` | v1 facts, 52 questions, `merge()` |
 | `app/agents/collections_v3/jev_facts_v2.py` | v2 grouped facts, 28 questions, structural rules |
-| `app/agents/collections_v3/jev_state.py` | structured state with definitions |
-| `app/agents/collections_v3/jev_decisions.py` | `path_decision`, `intent`, the six intent groups |
+| `app/agents/collections/perception/jev_state.py` | structured state with definitions |
+| `app/agents/collections/perception/jev_decisions.py` | `path_decision`, `intent`, the six intent groups |
 | `benchmarks/jev_intent_bench.py` | intent fixture, single choice (+ riders) |
 | `benchmarks/jev_intent_groups_bench.py` | intent fixture, six groups |
 | `benchmarks/jev_facts_bench.py` | arbiter contrast pairs, Jev vs production |
@@ -552,7 +552,7 @@ The request format has no examples slot, so reference turns go into the
 state as `labelled_examples`: a list of `{agent_said, borrower_said,
 response, pivot, question}` with a definition entry, and the six group
 questions are told to match the closest example before using the
-definitions. Module: `app/agents/collections_v3/jev_examples.py`. Flags:
+definitions. Module: `app/agents/collections/perception/jev_examples.py`. Flags:
 `--examples` on `benchmarks/jev_intent_groups_bench.py` and on
 `benchmarks/jev_ladder_replay.py`.
 
@@ -1552,7 +1552,7 @@ seats are switched on and where they live:
   The Jev client reads the key, model and timeout from settings when the app
   is importable and from the env otherwise (the benchmarks run without it).
 - **The planner never imports a domain package.** The planner seat moved to
-  `app/agents/collections_v3/jev_planner_seat.py`, and the workflow JSON
+  `app/agents/collections/perception/jev_planner_seat.py`, and the workflow JSON
   declares it: `planner.seat_module` in `collections_v3.json`. The platform
   knows the verb (a seat classifies) and the domain names the module. With
   `planner_seat=jev` and no declared module the planner logs a warning and
@@ -1580,7 +1580,7 @@ default.
 grouped questions the seat uses), with v2 importing the passthrough choices,
 the rider wording, the ladder rungs, the field list, the text-state builder
 and `merge` from v1. The pieces v2 borrowed are now written into it, and it
-is the app's only facts module, `app/agents/collections_v3/jev_facts.py`;
+is the app's only facts module, `app/agents/collections/perception/jev_facts.py`;
 its coverage assertion derives the categorical field list from the
 `PathFacts` schema itself instead of from v1's list, and checks every choice
 key against the schema's Literal values. The first version moved to

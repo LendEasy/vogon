@@ -12,7 +12,7 @@ utter. The classification follows from the inventory, not the other way round.
 
 ## 1. The survey
 
-Every line in `app/agents/collections/v3_lines.yaml` classified by the move its
+Every line in `app/agents/collections/lines/lines.yaml` classified by the move its
 **opening sentence** makes. Jev, one `choice` over 12 moves, 204 requests,
 $0.0093. Raw in `voice-gateway/prototypes/complement/survey.json`.
 

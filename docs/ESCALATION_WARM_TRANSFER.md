@@ -65,7 +65,8 @@ TURN SERVICE (meaning)                          GATEWAY (mechanics)
    `test_every_escalation_node_has_a_declared_transfer_route`);
 3. control-plane rows for that owner + workflow: `escalation_config` (hold
    message, voicemail script, callback message, agent timeout, hold music,
-   `summary_fields`, the proactive offer's switch and threshold) and one or more
+   the proactive offer's switch and threshold; `summary_fields` is no longer read,
+   2026-10-30) and one or more
    `escalation_target` (number, label, priority, enabled).
 
 Optional wording in the escalation node's `"config"` object in the workflow
@@ -98,9 +99,10 @@ re-ask: `offer_reask_speak` on the node config.
 the escalated finalize and summarizes **the call so far** for the agent:
 
 - **Input** — the conversation as the caller heard it (`transcript_as_heard`
-  over the call log: interruption-aware, last 40 lines / 6,000 chars), the
-  confirmed fields (`summary_fields` names the caller), any narrative, and the
-  reason (the caller's own words from `EscalationTriggered`).
+  over the call log: interruption-aware, last 40 lines / 6,000 chars) and the
+  reason (the caller's own words from `EscalationTriggered`). The graph's
+  confirmed fields and narrative (`summary_fields`) were always empty on the
+  engine and were dropped from the prompt 2026-10-30.
 - **Prompt** — rules in the system prompt (≤ 65 words, spoken English; who,
   identity confirmed or not, what they want, what was discussed or agreed, what
   is open, why transferred; never invent; say if the caller is upset), the call
@@ -484,6 +486,5 @@ no caller.
 cd voice-gateway && python3 -m pytest tests/escalation -q
 cd data-plane && PYTHONPATH=.:../voice-gateway python3 -m pytest \
   tests/test_escalation_seam.py tests/test_record_transfer.py tests/test_escalation_offer.py \
-  tests/simulate_escalation_no_answer.py tests/test_escalation_twiml.py \
-  tests/test_escalation_summary.py tests/test_voice_timing_constants.py -q
+  tests/test_voice_timing_constants.py -q
 ```

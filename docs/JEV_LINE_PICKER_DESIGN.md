@@ -23,7 +23,7 @@ wired. Terms are defined where first used. Every state Jev sees is JSON.
 - **tell** — a piece of content the path owes the borrower (the read-back,
   the fee-waiver condition, the promise recap). 30 exist (`TELL_SPECS`), each
   discharged by one registry line.
-- **line** — an approved spoken line in the registry (`v3_lines.yaml`, 204
+- **line** — an approved spoken line in the registry (`lines.yaml`, 204
   lines): a template with `{placeholders}`, a must-say list and a
   must-not-say list.
 - **steering** — the block the deterministic executor renders for itself

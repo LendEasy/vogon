@@ -340,7 +340,7 @@ numbers, copied into `CallConfig.line_detection` by `begin_call`:
       }
     }
 
-The wording stays in the line registry (`v3_lines.yaml`,
+The wording stays in the line registry (`lines.yaml`,
 `v3_voicemail_message`: must say the callback number and the lender, must
 not say "past due", "debt", "$"...), so the rendered text carries the same
 guards as every other spoken line. The JSON names WHICH line and WHEN; the

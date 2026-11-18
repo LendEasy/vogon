@@ -65,7 +65,7 @@ plus the smallest change that gets the line into the call log. Default ON;
 the re-ask, and `history_block` (`views.py`) in v1 — the row lands one
 request after the line played, so it would sit after the reply it preceded.
 
-**Domain artifact** — `data-plane/app/agents/collections/front.yaml`: the
+**Domain artifact** — `data-plane/app/agents/collections/lines/front.yaml`: the
 prompt (the prototype's one-sentence r2), two beat pools, `must_not_say`.
 
 **Config** — `FRONT_MODEL_ENABLED` (default on), `FRONT_MODEL`,
@@ -336,7 +336,7 @@ front line, then Agent's answer.
 |---|---|
 | `gateway/transport/front_source.py` | `FrontModelSource`: `prime(text)` starts the generation task under `front_budget_ms`; `ready()`; `line(trigger)` awaited by the hold, split into sentences; `cancel()`; the physical-transcript view; the ALREADY SAID list; the verified flag |
 | `gateway/transport/front_guard.py` | the prototype's `guard()` verbatim: shape, length, digits/currency, spelled numbers + calendar words, `must_not_say`, name-unless-verified, polarity, question, repeat (>4 words). Pure; every trip metered |
-| `agents/collections/front_prompt.txt` | the prototype's prompt, a domain artifact beside `v3_lines.yaml`; the one-sentence / 12-word / no-commitment-word rules are in it (2026-09-19), re-run before it ships |
+| `agents/collections/front_prompt.txt` | the prototype's prompt, a domain artifact beside `lines.yaml`; the one-sentence / 12-word / no-commitment-word rules are in it (2026-09-19), re-run before it ships |
 | `agents/collections/v3_lines.yaml` `front_beats:` block | the three tier-0 pools, approved lines like every other line in the registry |
 
 **Removed, at the end of the rollout:** `app/pipeline/fillers.py`,

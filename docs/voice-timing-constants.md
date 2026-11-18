@@ -114,24 +114,22 @@ means heard" claim in this system is accurate to within that lead.
 
 | Constant | Value | Where | Bounds |
 |---|---|---|---|
-| `REDELIVERY_MAX_ATTEMPTS` | `2` | `data-plane/app/framework/delivery_pending.py` | re-deliveries of one interrupted line before the gate gives up (§4g) |
-| `CONSENT_BLOCK_MAX` | `2` | `data-plane/app/framework/delivery_pending.py` | consent affirmatives rejected for a half-heard ask before falling through (§4g-lite) |
+| `MAX_ATTEMPTS` | `2` | `data-plane/app/agents/collections/engine/delivery.py` | turns a cut consent ask stays armed, waiting for its own ladder to ask it again, before the engine stops waiting |
 
-Both bound the same shape from opposite sides: a caller who talks over the same
-line every time it is re-spoken produces a truncated report every time, and the
-planner's validator re-surfaces the record into every subsequent plan. The
-documented exit — "a re-delivery the caller heard in full commits" — is real but
-conditional, and a serial barger can deny it indefinitely.
+A cut CONSENT question is re-delivered by its own ladder asking it again on a later
+turn; that ask is the delivery. A caller who keeps the ladder from asking again — every
+turn routed somewhere else — would otherwise keep the arm alive for the rest of the
+call. After two turns without the ask, the engine drops the arm; nothing is said for
+it, and the ladder's own question stands as it does for any unanswered ask.
 
-Giving up **commits** the held terminal status, exactly as a landed delivery
-does: a node stranded in `DELIVERY_PENDING` is the worse failure. It is not a
-delivery, so it is recorded as a degradation — a WARNING, a `guard_trips` entry
-(`redelivery_abandoned`, `outcome=committed_unheard`), and `abandoned: true` on
-the call-log event.
+A cut COMPLIANCE line has no count: the platform's delivery gate
+(`app/framework/delivery_gate.py`) arms it once, says it before the next reply, and the
+arm is spent.
 
-**Status note:** §4g was recorded as *deliberately deferred (user decision)* and
-was implemented in `79f03ab`. If it is deferred again, that commit is the unit to
-revert.
+The graph's two caps that stood here (`REDELIVERY_MAX_ATTEMPTS`, re-speaks of a
+`DELIVERY_PENDING` node before the gate committed it; `CONSENT_BLOCK_MAX`, consent
+affirmatives rejected for a half-heard ask) went with the node graph: nothing called
+them after 2026-10-29, and they were removed 2026-10-30.
 
 ---
 

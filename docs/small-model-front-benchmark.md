@@ -68,7 +68,7 @@ document. The 4080 column in that doc is.
 
 No synthetic prompts. Every payload is the production artifact:
 
-- **Pass A — filler.** The real `app/agents/collections/front.yaml` prompt
+- **Pass A — filler.** The real `app/agents/collections/lines/front.yaml` prompt
   (2,046 tokens) plus the real user message that
   `front_source._user_message()` builds. ~2,215 tokens in, ~15 out.
 - **Pass B — strip.** A **decision**, not a rewrite: `{"drop": 0|1}` against

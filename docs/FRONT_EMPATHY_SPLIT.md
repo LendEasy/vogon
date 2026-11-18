@@ -43,7 +43,7 @@ combined line when it is off — or when the front had nothing to say.
   "Sorry — this is Maya … on a recorded line", "I understand, but I'm not
   able to waive the {late_fee_str} late fee"). Regulated; never split.
 
-## 2. Catalog — `v3_lines.yaml` (the active registry, 204 lines)
+## 2. Catalog — `lines.yaml` (the active registry, 204 lines)
 
 Method: every template whose first words are one of the softener openers
 (sorry / of course / thanks / thank you / understood / that's alright / I
@@ -254,7 +254,7 @@ a hardship disclosure unacknowledged.
 
 ## 5. The prompt — the front owns the acknowledgement
 
-Today's prompt (`app/agents/collections/front.yaml`) treats SYMPATHY as one
+Today's prompt (`app/agents/collections/lines/front.yaml`) treats SYMPATHY as one
 register among several and lets the model decide whether a line is
 warranted. With the split, on the turns whose registry line has an empathy
 clause, the front's sentence is the ONLY acknowledgement the borrower will

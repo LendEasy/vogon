@@ -604,8 +604,8 @@ class CallClocks:
 
 
 def _filler_phrases(policy: FillerPolicy) -> Iterator[str]:
-    """One random primary, then continuations cycled in shuffled order —
-    mirrors app.pipeline.fillers.filler_sequence, driven by policy data."""
+    """One random primary, then continuations cycled in shuffled order, driven by
+    policy data (the pools are the application's: app/pipeline/fillers.py)."""
     if policy.phrases:
         yield random.choice(policy.phrases)
     pool = list(policy.continuations)
