@@ -43,7 +43,7 @@ Generated from the settings class (`vogon/gateway/settings.py`); regenerate when
 | `twilio_auth_token` | `TWILIO_AUTH_TOKEN` | `str` | `""` |  |
 | `twilio_phone_number` | `TWILIO_PHONE_NUMBER` | `str` | `""` |  |
 | `open_router_api_key` | `OPEN_ROUTER_API_KEY` | `str` | `""` | OPEN_ROUTER_API_KEY — The gateway's own decisions calls (the front model's move, the line detector's recording question) go to Jev over OpenRouter (vogon/gateway/jev.py). |
-| `jev_model` | `JEV_MODEL` | `str` | `"typesafe/jev-1.13"` |  |
+| `jev_model` | `JEV_MODEL` | `str` | `"typesafe/jev-1.14"` |  |
 | `jev_timeout_ms` | `JEV_TIMEOUT_MS` | `int` | `4000` | one decisions call sits on the turn's critical path |
 
 ## Metrics

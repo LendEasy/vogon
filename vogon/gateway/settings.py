@@ -40,7 +40,7 @@ class GatewaySettings(BaseSettings):
     # The gateway's own decisions calls (the front model's move, the line
     # detector's recording question) go to Jev over OpenRouter (vogon/gateway/jev.py).
     open_router_api_key: str = ""      # OPEN_ROUTER_API_KEY
-    jev_model: str = "typesafe/jev-1.13"
+    jev_model: str = "typesafe/jev-1.14"
     jev_timeout_ms: int = 4000         # one decisions call sits on the turn's critical path
 
     # ── Metrics ───────────────────────────────────────────────────────────────

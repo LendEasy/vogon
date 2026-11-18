@@ -1,6 +1,6 @@
 """The gateway's OpenRouter Decisions ("Jev") client — its own copy, domain-free.
 
-Jev (``typesafe/jev-1.13``) is not a text generator. It takes STATE (a plain
+Jev (``typesafe/jev-1.14``) is not a text generator. It takes STATE (a plain
 string, or a JSON object of related context) plus typed QUESTIONS and returns
 one typed answer per question with a probability attached — no prompt asking
 for JSON, no parsing, nothing to validate. Three question shapes:

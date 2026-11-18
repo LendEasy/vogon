@@ -174,7 +174,7 @@ well and free-text generation never was.
 
 ## Second round — both tasks on Jev
 
-`typesafe/jev-1.13` via OpenRouter's decisions endpoint. Task 1 is a `choice`
+`typesafe/jev-1.14` via OpenRouter's decisions endpoint. Task 1 is a `choice`
 over the seven registers with `SILENT` as the bail-out; task 2 is a `noul`
 where yes means drop. Both discriminators live in the option text, never in
 the state, per §20.8 of the Jev design.
