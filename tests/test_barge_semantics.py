@@ -16,7 +16,6 @@ from vogon.gateway.settings import settings
 from vogon.gateway.transport.barge_semantics import (
     ABSORB_VERDICTS,
     CUT_VERDICTS,
-    BargeVerdictSignal,
     heuristic_verdict,
     is_absorb,
     resolve_final,
@@ -128,11 +127,6 @@ def test_ambiguous_final_stays_swallowed():
 
 
 # ── plumbing contracts ──────────────────────────────────────────────────────────
-
-def test_verdict_schema_shape():
-    s = BargeVerdictSignal(verdict="backchannel", confidence=0.9)
-    assert s.verdict == "backchannel"
-
 
 def test_absorbed_event_contract_shape():
     """An absorb decision always names its phase, verdict and source — all

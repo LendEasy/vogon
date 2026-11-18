@@ -433,16 +433,19 @@ class TestFillerHold:
 
 def test_explicit_hold_probes_at_sixty_and_exits_fifteen_seconds_later():
     clocks, events = make_clocks(silence=SILENCE)
+    audio: list = []
+    clocks._audio_emit = lambda now, event, **detail: audio.append((event, detail))
     clocks.note_playout_end()
     clocks.grant_silence_grace(60)
+    assert ("silence_grace", {"seconds": 60.0}) in audio     # the grace is on the audio log
     run_ticks(clocks, 1, 60)
     assert events == []
     clocks.tick(T0 + 60)
-    assert [e.threshold_id for e in events] == ["warn", "alert"]
+    assert [(e.threshold_id, e.silent_for_sec) for e in events] == [("warn", 60.0), ("alert", 60.0)]
     run_ticks(clocks, 61, 75)
     assert not any(e.threshold_id == "exit" for e in events)
     clocks.tick(T0 + 75)
-    assert events[-1].threshold_id == "exit"
+    assert events[-1].threshold_id == "exit" and events[-1].silent_for_sec == 75.0
     clocks.note_caller_activity()
     assert clocks._sil_grace_sec == 0
 

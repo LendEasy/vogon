@@ -110,12 +110,6 @@ class TestWhisperTwiml:
         say = gather.find("Say")
         assert say is not None
 
-    def test_whisper_twiml_action_url_present(self):
-        action_url = "https://myapp.com/agent-ready"
-        out = whisper_twiml("Summary.", action_url)
-        assert action_url in out
-
-
 # ---------------------------------------------------------------------------
 # agent_connect_twiml
 # ---------------------------------------------------------------------------

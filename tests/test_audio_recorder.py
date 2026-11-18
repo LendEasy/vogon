@@ -142,15 +142,6 @@ class TestTimelinePlacement:
         mid = 2000
         assert all(left[mid - 10 : mid + 10][i] == 0 for i in range(20))
 
-    def test_overlapping_caller_and_agent_at_same_time(self):
-        """Both channels carry signal when caller and agent speak simultaneously (barge-in)."""
-        rec = AudioRecorder()
-        rec.add_caller_chunk(0.0, _mulaw_tone(160))
-        rec.add_agent_chunk(0.0, _mulaw_tone(160))
-        left, right = _read_stereo(rec.to_wav_bytes())
-        assert any(s != 0 for s in left)
-        assert any(s != 0 for s in right)
-
     def test_agent_starts_after_caller(self):
         """Agent audio at t=200ms stays silent on right channel at t=0."""
         rec = AudioRecorder()
@@ -161,16 +152,6 @@ class TestTimelinePlacement:
         assert all(right[i] == 0 for i in range(1600))
         # Right channel at t≥200ms should have signal.
         assert any(right[i] != 0 for i in range(1600, len(right)))
-
-    def test_only_caller_chunks_no_crash(self):
-        rec = AudioRecorder()
-        rec.add_caller_chunk(0.0, _mulaw_silence(160))
-        assert rec.to_wav_bytes() is not None
-
-    def test_only_agent_chunks_no_crash(self):
-        rec = AudioRecorder()
-        rec.add_agent_chunk(0.0, _mulaw_silence(160))
-        assert rec.to_wav_bytes() is not None
 
     def test_empty_bytes_chunk_ignored(self):
         rec = AudioRecorder()

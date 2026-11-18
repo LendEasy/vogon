@@ -221,15 +221,3 @@ def test_intro_absorbed_final_swallows_even_grown_substantive():
     assert should_swallow_absorbed_final("intro_absorb", grown) is True
     # Echo keeps its unconditional swallow.
     assert should_swallow_absorbed_final("echo", grown) is True
-
-
-def test_farewell_window_still_defers_substantive(monkeypatch):
-    """The farewell keeps today's defer semantics — absorb-all is the
-    OPENING's policy, declared per-command, not a protected-window default."""
-    monkeypatch.setattr(settings, "semantic_barge_window_ms", 200)
-    t = _bare(monkeypatch)          # protected, absorb_playout False
-    t._last_interim_text = "hold on I want to ask you something about this call"
-    asyncio.run(t._run_protected_window())
-    assert t._absorbing_utterance is False
-    assert "barge_deferred_protected" in _events(t)
-

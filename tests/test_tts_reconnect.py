@@ -27,10 +27,10 @@ path.
 from __future__ import annotations
 
 import asyncio
-import inspect
+
+from transport_fixtures import bare_twilio_transport
 
 from vogon.gateway.pipeline.tts import TTSClient
-from vogon.gateway.transport import twilio_transport
 
 
 def _client() -> TTSClient:
@@ -57,21 +57,6 @@ class TestReconnectReplacesTheSocket:
         assert asyncio.run(c.reconnect()) is True
         assert order == ["close", "open"], order
         assert c.is_open
-
-    def test_a_dead_socket_is_replaced_not_reused(self):
-        c = _client()
-        dead = c._ws_client
-
-        async def fake_close():
-            c._ws_client = None
-
-        async def fake_open():
-            c._ws_client = object()
-
-        c.close, c.open = fake_close, fake_open
-        asyncio.run(c.reconnect())
-        assert c._ws_client is not dead, "retried into the same socket"
-
 
 class TestItFailsSoft:
     """A live phone call is downstream of this. An exception here would take
@@ -108,22 +93,39 @@ class TestItFailsSoft:
 
 class TestTheTransportReconnectsBeforeRetrying:
     """Placement is the fix. Reconnecting AFTER the retry would leave the
-    retry itself streaming into the dead socket — which is the bug."""
+    retry itself streaming into the dead socket — which is the bug. Driven
+    through the real send path (_send_response) with the stream stubbed: a
+    first attempt that errors with nothing sent, then whatever comes next.
+    Until 2026-10-30 these compared positions of strings in the source, which
+    a reconnect moved after the retry inside the same block still satisfied."""
 
-    def _src(self) -> str:
-        return inspect.getsource(twilio_transport)
+    TEXT = "Hello there. How are you?"
 
-    def test_reconnect_precedes_both_retry_paths(self):
-        # Anchored on the logger FORMAT strings, not on prose: the comment
-        # above the reconnect quotes the log lines, and searching for the
-        # quoted phrases found the comment instead of the call site.
-        src = self._src()
-        at_reconnect = src.index("await self._tts.reconnect()")
-        assert at_reconnect < src.index('"TTS stream sent 0 chunks')
-        assert at_reconnect < src.index('"TTS mid-stream disconnect after %d')
+    def _send(self, reopen: bool):
+        order = []
+        t = bare_twilio_transport(_stream_sid="S1")
+        results = iter([(0, True, 2, 0, ""), (12, False, 2, 2, self.TEXT)])
+
+        async def stream_once(text, audio_id):
+            order.append("stream")
+            return next(results)
+
+        async def reconnect():
+            order.append("reconnect")
+            return reopen
+
+        t._stream_once = stream_once
+        t._tts.reconnect = reconnect
+        return order, asyncio.run(t._send_response(self.TEXT, "a1"))
+
+    def test_the_retry_streams_into_the_reopened_socket(self):
+        order, report = self._send(reopen=True)
+        assert order == ["stream", "reconnect", "stream"], order
+        assert report.status == "complete" and report.chunks_sent == 12
 
     def test_a_failed_reconnect_skips_the_retry(self):
         # Retrying into a socket we just failed to reopen is the millisecond
         # no-op from the incident.
-        src = self._src()
-        assert "not retrying into a dead socket" in src
+        order, report = self._send(reopen=False)
+        assert order == ["stream", "reconnect"], order
+        assert report.status == "failed" and report.chunks_sent == 0

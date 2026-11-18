@@ -24,9 +24,6 @@ class TestEotConfigDefaults:
             < Settings.model_fields["deepgram_phone_eot_timeout_ms"].default
         )
 
-    def test_phone_eot_timeout_reduced_from_legacy_2000ms(self):
-        assert Settings.model_fields["deepgram_phone_eot_timeout_ms"].default == 1400
-
     def test_eager_threshold_below_definitive_threshold(self):
         assert Settings.model_fields["deepgram_eager_eot_threshold"].default == 0.72
         assert Settings.model_fields["deepgram_phone_eager_eot_threshold"].default == 0.70

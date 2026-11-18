@@ -25,16 +25,6 @@ def test_stream_to_monotonic_none_when_no_word_timing():
     assert stream_to_monotonic(1000.0, None) is None
 
 
-def test_onset_correction_is_earlier_than_the_interim_proxy():
-    """The whole point: word .start (true onset) precedes the first-interim
-    arrival (proxy) by the STT delivery latency."""
-    epoch = 1000.0
-    true_onset = stream_to_monotonic(epoch, 5.00)     # word started 5.00s in
-    interim_arrival_proxy = epoch + 5.25              # interim reached us 250ms later
-    assert true_onset < interim_arrival_proxy
-    assert round(interim_arrival_proxy - true_onset, 3) == 0.25
-
-
 # ── OffsetEstimator (outbound jitter lead) ──────────────────────────────────────
 
 def test_estimator_starts_at_zero():

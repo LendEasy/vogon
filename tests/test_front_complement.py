@@ -23,7 +23,7 @@ from vogon.gateway.transport.front_source import FrontConfig, FrontModelSource
 # with beats only), so the tests that exercise a FULL artifact read the
 # application's: FRONT_CONFIG_PATH when set, else the monorepo sibling, else skip.
 _ARTIFACT = settings.resolved_front_config_path() or str(
-    pathlib.Path(__file__).resolve().parents[2] / "data-plane" / "app" / "agents" / "collections" / "front.yaml")
+    pathlib.Path(__file__).resolve().parents[2] / "data-plane" / "app" / "agents" / "collections" / "lines" / "front.yaml")
 
 
 def _artifact() -> FrontConfig:

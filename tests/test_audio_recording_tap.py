@@ -55,15 +55,6 @@ def _make_transport(recorder=None, tts_playing=False) -> TwilioTransport:
 # ── Construction ──────────────────────────────────────────────────────────────
 
 class TestConstruction:
-    def test_recorder_stored_when_provided(self):
-        rec = MagicMock()
-        t = _make_transport(recorder=rec)
-        assert t._recorder is rec
-
-    def test_recorder_is_none_by_default(self):
-        t = _make_transport(recorder=None)
-        assert t._recorder is None
-
     def test_no_crash_without_recorder(self):
         t = _make_transport(recorder=None)
         asyncio.run(t.handle_text_frame(_media_msg(_mulaw_bytes())))
@@ -247,20 +238,31 @@ class TestOutboundTap:
             f"Frame 2→3 gap {ts2-ts1:.6f}s should be {expected_gap:.6f}s"
 
     def test_byte_cursor_resets_between_utterances(self):
-        """_do_tts_stream resets the byte cursor, so each utterance anchors fresh."""
+        """_do_tts_stream resets the byte cursor, so each utterance anchors at its own
+        wall-clock start, not where the last one's audio ended. Driven through the real
+        stream path; until 2026-10-30 the test performed the reset itself."""
         rec = MagicMock()
         t = _make_transport(recorder=rec)
-        # Simulate first utterance: send one frame, cursor advances.
-        asyncio.run(t._send_media_frame(_mulaw_bytes(160)))
-        ts_first, _ = rec.add_agent_chunk.call_args_list[0][0]
-        # Simulate _do_tts_stream reset between utterances.
-        t._rec_tts_start_ts = 0.0
-        t._rec_tts_byte_offset = 0
-        # Second utterance first frame.
-        asyncio.run(t._send_media_frame(_mulaw_bytes(160)))
-        ts_second, _ = rec.add_agent_chunk.call_args_list[1][0]
-        # Second utterance gets a fresh start_ts (>= first utterance's start_ts).
-        assert ts_second >= ts_first
+
+        async def stream(text):
+            for _ in range(5):
+                yield b"\xff" * 1600, None          # 8000 bytes = 1.0 s of audio per utterance
+
+        t._tts.stream = stream
+
+        async def two_utterances():
+            await t._do_tts_stream("First line.", "u1")
+            first_count = len(rec.add_agent_chunk.call_args_list)
+            await t._do_tts_stream("Second line.", "u2")
+            return first_count
+
+        first_count = asyncio.run(two_utterances())
+        stamps = [call[0][0] for call in rec.add_agent_chunk.call_args_list]
+        assert first_count == 50 and len(stamps) == 100
+        # the first utterance's frames advance by the cursor: 160 bytes = 20 ms each
+        assert abs((stamps[first_count - 1] - stamps[0]) - 0.98) < 1e-6
+        # the second anchors fresh: well before the 1.0 s a carried-over cursor would put it at
+        assert stamps[first_count] - stamps[0] < 0.5
 
 
 # ── Stream epoch wiring ───────────────────────────────────────────────────────

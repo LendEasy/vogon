@@ -32,76 +32,46 @@ from __future__ import annotations
 import inspect
 
 import pytest
+from test_call_clocks import SILENCE, T0, make_clocks, run_ticks
 
-from vogon.gateway.transport.clocks import CallClocks
 from vogon.gateway.transport.twilio_transport import TwilioTransport
 
 
-class _Clock:
-    """Just the silence bookkeeping, driven on a fake timeline."""
-
-    def __init__(self):
-        self.c = CallClocks.__new__(CallClocks)
-        self.c._sil_idle = 0.0
-        self.c._sil_fired = set()
-        self.c._sil_armed = True
-        # A playout DEPTH, not a flag: a front line and the desk's answer can
-        # be in flight together, and the front line's end must not un-pause
-        # the clock while the desk is still talking.
-        self.c._playing_depth = 0
-        self.c._playing = False
-        self.c._playing_since = None
-        self.c._playout_audio_ms = None
-
-    def idle(self, seconds: float):
-        """Advance the timeline while nobody is speaking."""
-        if self.c._sil_armed and not self.c._playing:
-            self.c._sil_idle += seconds
+def _turn(reset: bool):
+    """An earlier turn has armed the window; the caller answers and we think for 4 s, speak for
+    2 s, and stop — driven through the real CallClocks.tick() at 1 Hz. Until 2026-10-30 these
+    tests advanced a test-owned idle counter and no threshold was ever evaluated."""
+    clocks, events = make_clocks(silence=SILENCE)
+    clocks.note_playout_end()                      # an earlier turn: the window is armed
+    run_ticks(clocks, 1, 5)                        # 4 s: the LLM turn (c51a075a's 3.8 s)
+    clocks.note_playout_start(is_turn_audio=True)
+    run_ticks(clocks, 5, 7)                        # 2 s of our speech
+    clocks.note_playout_end(reset_window=reset)    # the turn stops playing at ~T0+6
+    return clocks, events
 
 
 class TestARealTurnRestartsTheWindow:
     def test_thinking_time_is_not_charged_to_the_caller(self):
-        k = _Clock()
-        k.idle(3.8)                       # the LLM turn — c51a075a's 3.8s
-        k.c.note_playout_start()
-        k.c.note_playout_end(reset_window=True)
-        assert k.c._sil_idle == 0.0, (
-            "the caller's silence starts when we STOP talking, not when they "
-            f"did — {k.c._sil_idle}s carried over")
-
-    def test_the_caller_gets_the_whole_window_after_a_turn(self):
-        k = _Clock()
-        k.idle(3.8)
-        k.c.note_playout_end(reset_window=True)
-        k.idle(7.9)
-        assert k.c._sil_idle < 8.0, "warn fired early on carried-over idle"
+        clocks, events = _turn(reset=True)
+        run_ticks(clocks, 7, 30)
+        # the caller gets a whole 8 s after we stop talking: warn at T0+14. Without the reset the
+        # 4 s of thinking was charged to them and warn came at T0+10 (measured).
+        assert [(e.threshold_id, e.at - T0) for e in events][:1] == [("warn", 14.0)]
 
     def test_a_fired_threshold_is_rearmed_by_a_turn(self):
         # Otherwise the next window skips straight past warn.
-        k = _Clock()
-        k.idle(11.0)
-        k.c._sil_fired.update({"warn", "alert"})
-        k.c.note_playout_end(reset_window=True)
-        assert k.c._sil_fired == set()
+        clocks, events = make_clocks(silence=SILENCE)
+        clocks.note_playout_end()
+        run_ticks(clocks, 1, 12)                   # warn@8, alert@10
+        clocks.note_playout_start(is_turn_audio=True)
+        clocks.note_playout_end(reset_window=True)
+        run_ticks(clocks, 12, 21)
+        assert [e.threshold_id for e in events] == ["warn", "alert", "warn"]
 
 
-class TestTheProbeDoesNotRestartIt:
-    """The exit threshold is the only thing that hangs up a dead call."""
-
-    def test_a_probe_leaves_the_window_running(self):
-        k = _Clock()
-        k.idle(10.0)                      # warn + alert have fired; probe spoken
-        k.c._sil_fired.update({"warn", "alert"})
-        k.c.note_playout_end()            # default: no reset
-        k.idle(27.0)
-        assert k.c._sil_idle >= 37.0, "exit can never arrive"
-        assert "exit" not in k.c._sil_fired  # not yet evaluated, but reachable
-
-    def test_the_default_is_no_reset(self):
-        k = _Clock()
-        k.idle(5.0)
-        k.c.note_playout_end()
-        assert k.c._sil_idle == 5.0
+# The probe half — our own probe must NOT restart the window, or exit never arrives — is pinned
+# on the real tick in test_call_clocks.py (test_playback_pauses_idle_clock_without_reset,
+# test_watchdog_on_a_probe_does_not_reset_the_window).
 
 
 class TestWhichAudioCountsAsATurn:

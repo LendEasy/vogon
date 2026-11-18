@@ -11,6 +11,11 @@ eager/final unless Flux already carried it forward.
 """
 from __future__ import annotations
 
+import asyncio
+
+from deepgram.listen.v2.types import ListenV2TurnInfo
+from deepgram.listen.v2.types.listen_v2turn_info_words_item import ListenV2TurnInfoWordsItem
+
 from vogon.gateway.pipeline.stt import STTSession, merge_resumed_transcripts
 
 # ── merge_resumed_transcripts (pure) ────────────────────────────────────────────
@@ -56,31 +61,6 @@ def _bare_session():
     return s
 
 
-def test_session_stitches_the_reference_call_sequence():
-    """eager("Can I pay it") → TurnResumed → eager("on the phone?") → final
-    must surface the FULL utterance at both the eager and the final."""
-    s = _bare_session()
-
-    # eager #1 (as the EagerEndOfTurn branch does)
-    t1 = s._apply_resume_stitching("Can I pay it")
-    s._pending_text = t1
-    assert t1 == "Can I pay it"
-
-    # TurnResumed: retain the pre-resume transcript
-    s._resumed_prefix = merge_resumed_transcripts(s._resumed_prefix, s._pending_text)
-    s._pending_text = ""
-
-    # eager #2 arrives with a RESTARTED transcript (the bug's shape)
-    t2 = s._apply_resume_stitching("on the phone?")
-    s._pending_text = t2
-    assert t2 == "Can I pay it on the phone?"   # speculation sees the full utterance
-
-    # final EndOfTurn with the restarted transcript
-    t3 = s._apply_resume_stitching("on the phone?")
-    s._resumed_prefix = ""                       # EndOfTurn consumes the prefix
-    assert t3 == "Can I pay it on the phone?"    # the turn commits FULL
-
-
 def test_session_noop_when_flux_is_cumulative():
     s = _bare_session()
     s._resumed_prefix = "Can I pay it"
@@ -89,24 +69,66 @@ def test_session_noop_when_flux_is_cumulative():
     ) == "Can I pay it on the phone?"
 
 
-def test_session_double_resume_accumulates():
-    s = _bare_session()
-    # resume 1 retained "Yeah so"
-    s._resumed_prefix = merge_resumed_transcripts("", "Yeah so")
-    # eager between resumes restarted: "can I pay"
-    mid = s._apply_resume_stitching("can I pay")
-    s._pending_text = mid
-    assert mid == "Yeah so can I pay"
-    # resume 2 retains the stitched pending
-    s._resumed_prefix = merge_resumed_transcripts(s._resumed_prefix, s._pending_text)
-    s._pending_text = ""
-    final = s._apply_resume_stitching("it on the phone?")
-    assert final == "Yeah so can I pay it on the phone?"
-
-
 def test_empty_final_flushes_retained_prefix():
     # An EndOfTurn with empty transcript while a prefix is retained must flush
     # the prefix (previously the event was skipped and the words lost).
     s = _bare_session()
     s._resumed_prefix = "Can I pay it"
     assert s._apply_resume_stitching("") == "Can I pay it"
+
+
+# ── Session flow through the real message handler (Flux TurnInfo messages) ──────
+# Until 2026-10-30 the two flows below re-enacted the TurnResumed transition by hand
+# (s._resumed_prefix = merge_resumed_transcripts(...)); dropping the merge in
+# STTSession._on_message would not have failed them.
+
+def _turn_info(event: str, text: str, seq: int) -> ListenV2TurnInfo:
+    words = [ListenV2TurnInfoWordsItem(word=word, confidence=0.95) for word in text.split()]
+    return ListenV2TurnInfo(type="TurnInfo", request_id="r", sequence_id=seq, event=event, turn_index=0,
+                            audio_window_start=0.0, audio_window_end=1.0, transcript=text, words=words,
+                            end_of_turn_confidence=0.9)
+
+
+def _flux(events: list[tuple[str, str]]) -> list[tuple]:
+    """Feed the events through STTSession._on_message in eager mode; return what the
+    callbacks saw, in order."""
+    seen: list[tuple] = []
+
+    async def interim(text, confidence):
+        seen.append(("interim", text))
+
+    async def final(text, confidence, elapsed_ms, low_conf_words):
+        seen.append(("final", text))
+
+    async def eager(text, confidence, elapsed_ms, low_conf_words):
+        seen.append(("eager", text))
+
+    async def resumed():
+        seen.append(("resumed",))
+
+    async def run():
+        session = STTSession(interim, final, eager_eot_threshold=0.4, on_eager_end=eager, on_turn_resumed=resumed)
+        for seq, (event, text) in enumerate(events):
+            session._on_message(_turn_info(event, text, seq))
+            await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
+
+    asyncio.run(run())
+    return seen
+
+
+def test_session_stitches_the_reference_call_sequence():
+    """eager("Can I pay it") → TurnResumed → eager("on the phone?") → final must surface
+    the FULL utterance at both the eager and the final."""
+    seen = _flux([("EagerEndOfTurn", "Can I pay it"), ("TurnResumed", ""),
+                  ("EagerEndOfTurn", "on the phone?"), ("EndOfTurn", "on the phone?")])
+    assert seen == [("eager", "Can I pay it"), ("resumed",),
+                    ("eager", "Can I pay it on the phone?"), ("final", "Can I pay it on the phone?")]
+
+
+def test_session_double_resume_accumulates():
+    seen = _flux([("EagerEndOfTurn", "Yeah so"), ("TurnResumed", ""),
+                  ("EagerEndOfTurn", "can I pay"), ("TurnResumed", ""),
+                  ("EndOfTurn", "it on the phone?")])
+    assert seen[-1] == ("final", "Yeah so can I pay it on the phone?")
+    assert ("eager", "Yeah so can I pay") in seen
