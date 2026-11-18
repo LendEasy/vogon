@@ -37,7 +37,9 @@ COPY --from=build /src/voice-gateway/examples /opt/vogon/examples
 ENV PATH=/venv/bin:$PATH \
     STORAGE_BASE_PATH=/data/storage \
     RECORDINGS_PATH=/data/storage/recordings \
-    GATEWAY_PORT=8002
+    GATEWAY_PORT=8002 \
+    OPENBLAS_NUM_THREADS=1 \
+    OMP_NUM_THREADS=1
 USER vogon
 VOLUME ["/data"]
 EXPOSE 8002

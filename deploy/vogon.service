@@ -9,6 +9,10 @@ Wants=network-online.target
 [Service]
 User=vogon
 WorkingDirectory=/opt/vogon
+# One math-library thread: the echo canceller's NumPy code otherwise spins a worker per core between
+# audio frames (about 96% of a core per call against 2.6%). Before EnvironmentFile, so the file can override.
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=OMP_NUM_THREADS=1
 EnvironmentFile=/etc/vogon/vogon.env
 ExecStart=/opt/vogon/.venv/bin/python -m uvicorn vogon.gateway_service.main:app --host 127.0.0.1 --port 8002
 Restart=on-failure
